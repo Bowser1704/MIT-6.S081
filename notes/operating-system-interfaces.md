@@ -18,3 +18,10 @@
 
    > Although fork copies the file descriptor table, **each underlying file offset** is shared between parent and child.
 
+------
+
+## Bell Labs and CSP Threads
+
+https://swtch.com/~rsc/thread/
+
+> That is, it is a widespread mistake to think only of concurrent programming as a means to increase performance, *e.g.*, to overlap disk I/O requests, to reduce latency by prefetching results to expected queries, or to take advantage of multiple processors.
