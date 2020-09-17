@@ -3,8 +3,8 @@
 [lab-url](https://pdos.csail.mit.edu/6.828/2020/labs/util.html)
 
 
-- [v] sleep
-- [v] pingpong
-- [v] primes
-- [x] find
-- [x] xargs
+- [x] sleep
+- [x] pingpong
+- [x] primes
+- [ ] find
+- [ ] xargs
