@@ -15,6 +15,9 @@ sub entry {
     print " ret\n";
 }
 	
+entry("trace");
+
+# default
 entry("fork");
 entry("exit");
 entry("wait");
