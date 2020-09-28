@@ -31,3 +31,9 @@ https://swtch.com/~rsc/thread/
 ## pointer
 
 1. If `int *p = (int*)100`, then `(int)p + 1` and `(int)(p + 1)` are different numbers: the first is `101` but the second is `104`. When adding an integer to a pointer, as in the second case, the integer is implicitly multiplied by the size of the object the pointer points to.
+
+## Lab
+
+sizeof vs sizeof() https://stackoverflow.com/questions/1393582/why-is-sizeof-considered-an-operator
+
+> sizeof is a operator.
