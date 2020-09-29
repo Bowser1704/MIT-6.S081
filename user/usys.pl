@@ -16,7 +16,6 @@ sub entry {
 }
 	
 entry("trace");
-
 # default
 entry("fork");
 entry("exit");

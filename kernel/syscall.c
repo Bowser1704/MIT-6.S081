@@ -83,6 +83,8 @@ argstr(int n, char *buf, int max)
   return fetchstr(addr, buf, max);
 }
 
+extern uint64 sys_trace(void);
+// default
 extern uint64 sys_chdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_dup(void);
@@ -127,6 +129,16 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_trace]   sys_trace,
+};
+
+// for trace to print syscall name
+char * syscall_name[NELEM(syscalls)] = {
+  "",  "fork", "exit", "wait", "pipe",
+  "read", "kill", "exec", "fstat", "chdir",
+  "dup", "getpid", "sbrk", "sleep", "uptime",
+  "open", "write", "mknod", "unlink", "link",
+  "mkdir", "close", "trace"
 };
 
 void
@@ -138,6 +150,9 @@ syscall(void)
   num = p->trapframe->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     p->trapframe->a0 = syscalls[num]();
+    // print trace output
+    if((1 << num) & p->tracemask)
+      printf("%d: syscall %s -> %d\n",p->pid,syscall_name[num],p->trapframe->a0);
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
