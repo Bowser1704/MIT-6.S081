@@ -5,6 +5,20 @@ challenge:
 - how to multiplex several memories over one physical memory?
   while maintaining isolation between memories.
 
+- how does RISC-V paging hardware translate a va?
+
+<img src="https://i.loli.net/2020/10/05/3GEyT7VMfcgS8wZ.png" alt="image-20201005154327247" style="zoom:50%;" />
+
+1. satp register points to PA of top/L2 PD
+
+2. top 9 bits index L2 PD to get PTE of L1 PD 
+
+   by using 44-bit PPN (PPN can get a page number) to get physical address of L1 PD.
+   
+   > top 44 bits of PTE are top bits of physical address “physical page number”
+
+….
+
 ## Virtual Memory
 
 three pieces
