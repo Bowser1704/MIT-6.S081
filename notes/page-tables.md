@@ -57,9 +57,8 @@ FAQ
 
    12 bit offset = 4k
 
-   
-
 ## Ref
 
 https://draveness.me/whys-the-design-os-virtual-memory
 
+https://stackoverflow.com/questions/381244/purpose-of-memory-alignment
