@@ -15,6 +15,7 @@ sub entry {
     print " ret\n";
 }
 	
+entry("sysinfo");
 entry("trace");
 # default
 entry("fork");

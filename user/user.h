@@ -3,6 +3,8 @@ struct rtcdate;
 
 // system calls
 int trace(int);
+struct sysinfo;
+int sysinfo(struct sysinfo *);
 
 // default
 int fork(void);

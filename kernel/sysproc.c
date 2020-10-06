@@ -6,7 +6,25 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
+uint64
+sys_sysinfo(void)
+{ 
+  uint64 addr;
+  // argaddr(1, &addr) is wrong
+  if (argaddr(0, &addr) < 0)
+    return -1;
+
+  struct proc *p = myproc();
+  struct sysinfo si;
+  si.freemem = kfreemem();
+  si.nproc = knproc();
+  
+  if (copyout(p->pagetable, addr, (char *)&si, sizeof(si)) < 0)
+    return -1;
+  return 0;
+}
 
 uint64
 sys_trace(void)

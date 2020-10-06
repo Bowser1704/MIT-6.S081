@@ -80,3 +80,20 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+uint64
+kfreemem()
+{
+  uint64 fpn = 0; //free page num
+  struct run *r;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  while(r) {
+    fpn += 1;
+    r = r->next;
+  }
+  release(&kmem.lock);
+
+  return fpn * PGSIZE;  //PGSIZE is defined in riscv.h
+}
