@@ -474,3 +474,28 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+void
+ukvmmap(pagetable_t kpagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if(mappages(kpagetable, va, sz, pa, perm) != 0)
+    panic("uvmmap");
+}
+
+void
+ukvminit(pagetable_t kpagetable)
+{
+  for(int i = 0; i < 512; i++) {
+    kpagetable[i] = kernel_pagetable[i];
+  }
+}
+
+void
+ukvmfree(pagetable_t kpagetable)
+{
+  //there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    kpagetable[i] = 0;
+  }
+  kfree((void*)kpagetable);
+}

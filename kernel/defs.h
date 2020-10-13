@@ -86,6 +86,9 @@ void            panic(char*) __attribute__((noreturn));
 void            printfinit(void);
 
 // proc.c
+pagetable_t     proc_kpagetabe(struct proc *);
+void            proc_freekpagetable(pagetable_t);
+// default
 int             cpuid(void);
 void            exit(int);
 int             fork(void);
@@ -159,6 +162,9 @@ int             uartgetc(void);
 
 // vm.c
 void            vmprint(pagetable_t);
+void            ukvmmap(pagetable_t, uint64, uint64, uint64, int);
+void            ukvmfree(pagetable_t);
+void            ukvminit(pagetable_t);
 // default
 void            kvminit(void);
 void            kvminithart(void);
