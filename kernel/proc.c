@@ -152,7 +152,6 @@ freeproc(struct proc *p)
   p->pagetable = 0;
   if (p->kstack)
     uvmunmap(p->kpagetable, p->kstack, 1, 1);
-    // freekstack(p->kpagetable, p->kstack);
   p->kstack = 0;
   if (p->kpagetable)
     proc_freekpagetable(p->kpagetable);

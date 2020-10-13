@@ -1,0 +1,23 @@
+riscv64-unknown-elf-gcc -Wall -Werror -O -fno-omit-frame-pointer -ggdb -DSOL_PGTBL -DLAB_PGTBL -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib -mno-relax -I. -fno-stack-protector -fno-pie -no-pie   -c -o kernel/vm.o kernel/vm.c
+riscv64-unknown-elf-ld -z max-page-size=4096 -T kernel/kernel.ld -o kernel/kernel kernel/entry.o kernel/start.o kernel/console.o kernel/printf.o kernel/uart.o kernel/kalloc.o kernel/spinlock.o kernel/string.o kernel/main.o kernel/vm.o kernel/proc.o kernel/swtch.o kernel/trampoline.o kernel/trap.o kernel/syscall.o kernel/sysproc.o kernel/bio.o kernel/fs.o kernel/log.o kernel/sleeplock.o kernel/file.o kernel/pipe.o kernel/exec.o kernel/sysfile.o kernel/kernelvec.o kernel/plic.o kernel/virtio_disk.o kernel/vmcopyin.o kernel/stats.o kernel/sprintf.o 
+riscv64-unknown-elf-objdump -S kernel/kernel > kernel/kernel.asm
+riscv64-unknown-elf-objdump -t kernel/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel/kernel.sym
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+page table 0x0000000087fa7000
+..0: pte 0x0000000021fe8c01 pa 0x0000000087fa3000
+.. ..0: pte 0x0000000021fe8801 pa 0x0000000087fa2000
+.. .. ..0: pte 0x0000000021fe901f pa 0x0000000087fa4000
+.. .. ..1: pte 0x0000000021fe840f pa 0x0000000087fa1000
+.. .. ..2: pte 0x0000000021fe801f pa 0x0000000087fa0000
+..255: pte 0x0000000021fe9801 pa 0x0000000087fa6000
+.. ..511: pte 0x0000000021fe9401 pa 0x0000000087fa5000
+.. .. ..510: pte 0x0000000021fed807 pa 0x0000000087fb6000
+.. .. ..511: pte 0x0000000020001c0b pa 0x0000000080007000
+init: starting sh
+$ QEMU: Terminated
+

@@ -484,18 +484,42 @@ ukvmmap(pagetable_t kpagetable, uint64 va, uint64 pa, uint64 sz, int perm)
 
 void
 ukvminit(pagetable_t kpagetable)
-{
-  for(int i = 0; i < 512; i++) {
+{ 
+  // important! we have to map the user page table to the pd2 entry 0 to pass the part 3 of the lab.
+  for(int i = 1; i < 512; i++) {
     kpagetable[i] = kernel_pagetable[i];
   }
+
+  // the following four mappings are mapped to the pd2 entry 0.
+  // uart registers
+  ukvmmap(kpagetable, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+
+  // virtio mmio disk interface
+  ukvmmap(kpagetable, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+
+  // CLINT
+  ukvmmap(kpagetable, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+
+  // PLIC
+  ukvmmap(kpagetable, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
 }
 
 void
 ukvmfree(pagetable_t kpagetable)
 {
   //there are 2^9 = 512 PTEs in a page table.
-  for(int i = 0; i < 512; i++){
+  for(int i = 1; i < 512; i++){
     kpagetable[i] = 0;
   }
-  kfree((void*)kpagetable);
+  pagetable_t pd_l1 = (pagetable_t)PTE2PA(kpagetable[0]);
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pd_l1[i];
+    if (pte & PTE_V) {
+      uint64 pd_l0 = PTE2PA(pte);
+      kfree((void*) pd_l0);
+      pd_l1[i] = 0;
+    }
+  }
+  kfree((void*) pd_l1);
+  kfree((void*) kpagetable);
 }
