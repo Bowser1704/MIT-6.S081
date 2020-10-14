@@ -192,7 +192,7 @@
    +sys_sysinfo(void)
    +{
    +  uint64 addr;
-   +  // argaddr(1, &addr) is wrong
+   +  // the argument is in p->trapframe->a0; so tranfer 0 as the argaddr argument.
    +  if (argaddr(0, &addr) < 0)
    +    return -1;
    +

@@ -1,12 +1,5 @@
 ## Page Tables
 
-challenge:
-
-- how to multiplex several memories over one physical memory?
-  while maintaining isolation between memories.
-
-- how does RISC-V paging hardware translate a va?
-
 <img src="https://i.loli.net/2020/10/05/3GEyT7VMfcgS8wZ.png" alt="image-20201005154327247" style="zoom:50%;" />
 
 1. satp register points to PA of top/L2 PD
@@ -21,6 +14,76 @@ challenge:
 
 ## Virtual Memory
 
+
+  kernel address space
+
+  ![image-20201008113457084](https://i.loli.net/2020/10/08/zaOiBr4vp5Swdtg.png)
+
+  process address space
+
+  ![image-20201008120126463](https://i.loli.net/2020/10/08/f5YiIloKm7DjLC3.png)
+
+- Memory protection
+
+  Different process has different permissions to access same physical memory，and only can access physical memory which it has permissions
+  
+- **[Memory-mapped I/O](https://en.wikipedia.org/wiki/Memory-mapped_I/O)**
+
+>  So when an address is accessed by the CPU, it may refer to a portion of [physical RAM](https://en.wikipedia.org/wiki/Physical_memory), or it can instead refer to memory of the I/O device. Thus, the CPU instructions used to access the memory can also be used for accessing devices. 
+
+#### Two special page tables
+
+- Trampoline
+
+  Contains these instructions to basically transition and out of the kernel.
+
+  kernel to user.
+
+  255-511-511 page XV executable instructions
+
+- Trapframe
+
+  store some states when we jump to the kernel.
+
+  user to kernel.
+
+  255-511-510 page RWV
+
+### some hints
+
+1. We only uses 38 bit of the virtual address in xv6.
+
+2. put data and text in the same page just for simplicity.
+
+3. one gigabyte is 0x40000000.
+
+### some QA
+
+> why setting kernel stack high in the virtual address space. 
+
+we put the kernel stack high, so the guard page is no need to map the physical memory, however, we hava to map it to the physical memory when guard page is in the low virtual address space owe of direct mapping.
+
+## Lab
+
+[code](https://github.com/Bowser1704/MIT-6.S081/tree/pgtbl)
+
+1. pageable_t is defined in `kernel/riscv.h`
+
+   ```c
+   typedef uint64 *pagetable_t; // 512 PTEs
+   ```
+
+   every pagetable has 512 PTEs.
+
+2. A kernel page table per process.
+
+3. Simplify `copyin/copyinstr`userinit copy user pgtbl。
+
+   we are going to put the user page table to the kernel l2 pd zero entry.
+
+
+## Real World
+
 three pieces
 
 - Caching
@@ -31,48 +94,14 @@ three pieces
 
   Every process has its own process address space and page table.
 
+  Figure 8.13 in CSAPP is Linux process address space.
+
   ![image-20200929234455504](https://i.loli.net/2020/09/29/zUkqTQoWCj1D8hI.png)
 
-- Memory protection
+  **In xv6, every process has a user page table and all process share a single kernel page table which has a lot of independent kernel stack for every process.**
 
-  Different process has different permissions to access same physical memory，and only can access physical memory which it has permissions.
-
-> - 虚拟内存可以利用内存起到缓存的作用，提高进程访问磁盘的速度；
-> - 虚拟内存可以为进程提供独立的内存空间，简化程序的链接、加载过程并通过动态库共享内存；
-> - 虚拟内存可以控制进程对物理内存的访问，隔离不同进程的访问权限，提高系统的安全性
-
-### Multi-Level Page Tables
-
-> But if we had a 32-bit address space, 4 KB pages, and a 4-byte PTE, then we would need a 4 MB page table resident in memory at all times, even if the application referenced only a small chunk of the virtual address space.
-
-----------
-
-## Lab
-
-1. pageable_t is defined in `kernel/riscv.h`
-
-   ```c
-   typedef uint64 *pagetable_t; // 512 PTEs
-   ```
-
-   every pagetable has 512 PTEs.
-
------
-
-FAQ
-
-1. 虚拟内存机制中 swap 分区是必须的吗？csapp 9.3。
-
-2. 在 64 位的操作系统上，每个进程都会拥有 256 TiB 的内存空间，内核空间和用户空间分别占 128 TiB?
-
-   >  48 位？2^48 = 256 TiB。2^57 = 128 PiB。
-
-3. page size 4KB
-
-   12 bit offset = 4k
+  > lab pgtbl has an assignments which we are required to create a kernel page table per process.
 
 ## Ref
-
-https://draveness.me/whys-the-design-os-virtual-memory
 
 https://stackoverflow.com/questions/381244/purpose-of-memory-alignment
