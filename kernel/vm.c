@@ -14,7 +14,6 @@ pagetable_t kernel_pagetable;
 extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
-
 /*
  * prints the content of page tables
  */
@@ -413,23 +412,24 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 int
 copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
-  uint64 n, va0, pa0;
+  return copyin_new(pagetable, dst, srcva, len);
+  // uint64 n, va0, pa0;
 
-  while(len > 0){
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if(n > len)
-      n = len;
-    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
+  // while(len > 0){
+  //   va0 = PGROUNDDOWN(srcva);
+  //   pa0 = walkaddr(pagetable, va0);
+  //   if(pa0 == 0)
+  //     return -1;
+  //   n = PGSIZE - (srcva - va0);
+  //   if(n > len)
+  //     n = len;
+  //   memmove(dst, (void *)(pa0 + (srcva - va0)), n);
 
-    len -= n;
-    dst += n;
-    srcva = va0 + PGSIZE;
-  }
-  return 0;
+  //   len -= n;
+  //   dst += n;
+  //   srcva = va0 + PGSIZE;
+  // }
+  // return 0;
 }
 
 // Copy a null-terminated string from user to kernel.
@@ -439,40 +439,41 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 int
 copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 {
-  uint64 n, va0, pa0;
-  int got_null = 0;
+  return copyinstr_new(pagetable, dst, srcva, max);
+  // uint64 n, va0, pa0;
+  // int got_null = 0;
 
-  while(got_null == 0 && max > 0){
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if(n > max)
-      n = max;
+  // while(got_null == 0 && max > 0){
+  //   va0 = PGROUNDDOWN(srcva);
+  //   pa0 = walkaddr(pagetable, va0);
+  //   if(pa0 == 0)
+  //     return -1;
+  //   n = PGSIZE - (srcva - va0);
+  //   if(n > max)
+  //     n = max;
 
-    char *p = (char *) (pa0 + (srcva - va0));
-    while(n > 0){
-      if(*p == '\0'){
-        *dst = '\0';
-        got_null = 1;
-        break;
-      } else {
-        *dst = *p;
-      }
-      --n;
-      --max;
-      p++;
-      dst++;
-    }
+  //   char *p = (char *) (pa0 + (srcva - va0));
+  //   while(n > 0){
+  //     if(*p == '\0'){
+  //       *dst = '\0';
+  //       got_null = 1;
+  //       break;
+  //     } else {
+  //       *dst = *p;
+  //     }
+  //     --n;
+  //     --max;
+  //     p++;
+  //     dst++;
+  //   }
 
-    srcva = va0 + PGSIZE;
-  }
-  if(got_null){
-    return 0;
-  } else {
-    return -1;
-  }
+  //   srcva = va0 + PGSIZE;
+  // }
+  // if(got_null){
+  //   return 0;
+  // } else {
+  //   return -1;
+  // }
 }
 
 void
@@ -507,10 +508,10 @@ ukvminit(pagetable_t kpagetable)
 void
 ukvmfree(pagetable_t kpagetable)
 {
-  //there are 2^9 = 512 PTEs in a page table.
-  for(int i = 1; i < 512; i++){
-    kpagetable[i] = 0;
-  }
+  // why we just kfree pd_l0, but don't free the physical memory pte pointed to.
+  // because we can't free kernel memory.
+  // and user memory will be freed by uvmfree().
+  // so we just delte the mappings.
   pagetable_t pd_l1 = (pagetable_t)PTE2PA(kpagetable[0]);
   for(int i = 0; i < 512; i++){
     pte_t pte = pd_l1[i];
@@ -522,4 +523,38 @@ ukvmfree(pagetable_t kpagetable)
   }
   kfree((void*) pd_l1);
   kfree((void*) kpagetable);
+}
+
+// copy the process user page table to the kernel page table
+void
+ukvmmapuser(pagetable_t kpagetable, pagetable_t upagetable, uint64 newsz, uint64 oldsz)
+{
+  uint64 va;
+  pte_t *upte;
+  pte_t *kpte;
+
+  // user page table must be under PLIC.
+  if(newsz >= PLIC)
+    panic("ukvmmapuser: new size is bigger than PLIC");
+
+  for(va = oldsz; va < newsz; va += PGSIZE) {
+    upte = walk(upagetable, va, 0);
+    if(upte == 0)
+      panic("ukvmmapuser: pagetable walk error");
+    if((*upte & PTE_V) == 0)
+      panic("ukvmmapuser: upte is invalid");
+    // alloc a kernel pte
+    kpte = walk(kpagetable, va, 1);
+    if (kpte == 0)
+      panic("ukvmmapuser: kpte is null");
+    *kpte = *upte;
+    // these mappings is just for copy in / reading spmething
+    // so unset PTE_W and PTE_X.
+    *kpte &= ~(PTE_U|PTE_W|PTE_X);
+  }
+
+  for(va = newsz; va < oldsz; va += PGSIZE){
+    kpte = walk(kpagetable, va, 0);
+    *kpte &= ~PTE_V;
+  }
 }

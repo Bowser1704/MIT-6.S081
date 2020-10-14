@@ -244,6 +244,8 @@ userinit(void)
 
   p->state = RUNNABLE;
 
+  ukvmmapuser(p->kpagetable, p->pagetable, p->sz, 0);
+
   release(&p->lock);
 }
 
@@ -256,6 +258,7 @@ growproc(int n)
   struct proc *p = myproc();
 
   sz = p->sz;
+  if(sz + n > PLIC) return -1;
   if(n > 0){
     if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
@@ -263,6 +266,7 @@ growproc(int n)
   } else if(n < 0){
     sz = uvmdealloc(p->pagetable, sz, sz + n);
   }
+  ukvmmapuser(p->kpagetable, p->pagetable, sz, p->sz);
   p->sz = sz;
   return 0;
 }
@@ -308,6 +312,10 @@ fork(void)
   pid = np->pid;
 
   np->state = RUNNABLE;
+
+  // you must copy the np pagetable to its kpagetable
+  // because if parent prcoess exit, its memory will be cleared.
+  ukvmmapuser(np->kpagetable, np->pagetable, np->sz, 0);
 
   release(&np->lock);
 
@@ -497,13 +505,14 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         c->proc = 0;
 
+        // important!
+        kvminithart();
         found = 1;
       }
       release(&p->lock);
     }
 #if !defined (LAB_FS)
     if(found == 0) {
-      kvminithart();
       intr_on();
       asm volatile("wfi");
     }

@@ -165,6 +165,7 @@ void            vmprint(pagetable_t);
 void            ukvmmap(pagetable_t, uint64, uint64, uint64, int);
 void            ukvmfree(pagetable_t);
 void            ukvminit(pagetable_t);
+void            ukvmmapuser(pagetable_t, pagetable_t, uint64, uint64);
 // default
 void            kvminit(void);
 void            kvminithart(void);
@@ -186,6 +187,10 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+
+//vmcopy.c
+int             copyin_new(pagetable_t, char *, uint64, uint64);
+int             copyinstr_new(pagetable_t, char *, uint64, uint64);
 
 // plic.c
 void            plicinit(void);
