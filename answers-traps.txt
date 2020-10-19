@@ -1,0 +1,18 @@
+1. a1 holds 13 for the printf. a0 is a address which point to a string "%d %d"
+2. absolutely complier does this.
+3. printf function address is in 0x630.
+4. ra is 0x38
+5. address of i is pointing to a string "rld".
+    i is 0x00646c72
+    (gdb) p/t 0x00646c72
+    $9 = 11001000110110001110010
+    01110010 is 'r'
+    01101100 is 'l'
+    01100100 is 'd'
+    00000000 is NUL
+
+    if is's big-endian.
+    01110010 01101100 01100100 00000000
+    0x726c6400
+6. x=3 y=1, third argument is in a2. and it's 1. string argument is in stack.
+    a2 is 1 on that time.
