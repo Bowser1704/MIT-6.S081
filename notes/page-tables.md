@@ -33,11 +33,13 @@
 
 #### Two special page tables
 
+pagetable address 0x0000000087fa7000
+
 - Trampoline
 
   Contains these instructions to basically transition and out of the kernel.
 
-  kernel to user.
+  user to kernel.
 
   255-511-511 page XV executable instructions
 
@@ -45,11 +47,11 @@
 
   store some states when we jump to the kernel.
 
-  user to kernel.
+  kernel to user.
 
   255-511-510 page RWV
 
-### some hints
+### Some hints
 
 1. We only uses 38 bit of the virtual address in xv6.
 
@@ -57,7 +59,7 @@
 
 3. one gigabyte is 0x40000000.
 
-### some QA
+### Some QA
 
 > why setting kernel stack high in the virtual address space. 
 
