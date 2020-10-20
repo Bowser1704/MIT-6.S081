@@ -77,8 +77,17 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2){
+    if(p->alarm_enable == 1){
+      p->passed_ticks++;
+      if (p->passed_ticks == p->alarm_ticks){
+        p->alarm_enable = 0;    // Prevent re-entrant calls to the handler
+        savetrapframe();
+        p->trapframe->epc = p->alarm_handler;
+      }
+    }
     yield();
+  }
 
   usertrapret();
 }
@@ -218,3 +227,83 @@ devintr()
   }
 }
 
+void
+savetrapframe(){
+  struct proc *p = myproc();
+  p->usertrapframe.epc = p->trapframe->epc;
+  p->usertrapframe.ra = p->trapframe->ra;
+  p->usertrapframe.sp = p->trapframe->sp;
+  p->usertrapframe.gp = p->trapframe->gp;
+  p->usertrapframe.tp = p->trapframe->tp;
+
+  p->usertrapframe.s0 = p->trapframe->s0;
+  p->usertrapframe.s1 = p->trapframe->s1;
+  p->usertrapframe.s2 = p->trapframe->s2;
+  p->usertrapframe.s3 = p->trapframe->s3;
+  p->usertrapframe.s4 = p->trapframe->s4;
+  p->usertrapframe.s5 = p->trapframe->s5;
+  p->usertrapframe.s6 = p->trapframe->s6;
+  p->usertrapframe.s7 = p->trapframe->s7;
+  p->usertrapframe.s8 = p->trapframe->s8;
+  p->usertrapframe.s9 = p->trapframe->s9;
+  p->usertrapframe.s10 = p->trapframe->s10;
+  p->usertrapframe.s11 = p->trapframe->s11;
+
+  p->usertrapframe.t0 = p->trapframe->t0;
+  p->usertrapframe.t1 = p->trapframe->t1;
+  p->usertrapframe.t2 = p->trapframe->t2;
+  p->usertrapframe.t3 = p->trapframe->t3;
+  p->usertrapframe.t4 = p->trapframe->t4;
+  p->usertrapframe.t5 = p->trapframe->t5;
+  p->usertrapframe.t6 = p->trapframe->t6;
+
+  p->usertrapframe.a0 = p->trapframe->a0;
+  p->usertrapframe.a1 = p->trapframe->a1;
+  p->usertrapframe.a2 = p->trapframe->a2;
+  p->usertrapframe.a3 = p->trapframe->a3;
+  p->usertrapframe.a4 = p->trapframe->a4;
+  p->usertrapframe.a5 = p->trapframe->a5;
+  p->usertrapframe.a6 = p->trapframe->a6;
+  p->usertrapframe.a7 = p->trapframe->a7;
+}
+
+void
+restoretrapframe()
+{
+  struct proc* p = myproc();
+  p->trapframe->epc = p->usertrapframe.epc;
+  p->trapframe->ra = p->usertrapframe.ra;
+  p->trapframe->sp = p->usertrapframe.sp;
+  p->trapframe->gp = p->usertrapframe.gp;
+  p->trapframe->tp = p->usertrapframe.tp;
+
+  p->trapframe->s0 = p->usertrapframe.s0;
+  p->trapframe->s1 = p->usertrapframe.s1;
+  p->trapframe->s2 = p->usertrapframe.s2;
+  p->trapframe->s3 = p->usertrapframe.s3;
+  p->trapframe->s4 = p->usertrapframe.s4;
+  p->trapframe->s5 = p->usertrapframe.s5;
+  p->trapframe->s6 = p->usertrapframe.s6;
+  p->trapframe->s7 = p->usertrapframe.s7;
+  p->trapframe->s8 = p->usertrapframe.s8;
+  p->trapframe->s9 = p->usertrapframe.s9;
+  p->trapframe->s10 = p->usertrapframe.s10;
+  p->trapframe->s11 = p->usertrapframe.s11;
+
+  p->trapframe->t0 = p->usertrapframe.t0;
+  p->trapframe->t1 = p->usertrapframe.t1;
+  p->trapframe->t2 = p->usertrapframe.t2;
+  p->trapframe->t3 = p->usertrapframe.t3;
+  p->trapframe->t4 = p->usertrapframe.t4;
+  p->trapframe->t5 = p->usertrapframe.t5;
+  p->trapframe->t6 = p->usertrapframe.t6;
+
+  p->trapframe->a0 = p->usertrapframe.a0;
+  p->trapframe->a1 = p->usertrapframe.a1;
+  p->trapframe->a2 = p->usertrapframe.a2;
+  p->trapframe->a3 = p->usertrapframe.a3;
+  p->trapframe->a4 = p->usertrapframe.a4;
+  p->trapframe->a5 = p->usertrapframe.a5;
+  p->trapframe->a6 = p->usertrapframe.a6;
+  p->trapframe->a7 = p->usertrapframe.a7;
+}
