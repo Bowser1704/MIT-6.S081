@@ -41,7 +41,7 @@ trampoline
 
 syscall
 
-- The user code places the arguments for exec in registers a0 and a1, and puts the system call number in a7.
+- The user code places the arguments for exec in registers a0 and a1, **and puts the system call number in a7.** Return value is in a0.
 
 - get system call number from `kernel/syscall.h`
 

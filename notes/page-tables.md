@@ -14,8 +14,20 @@
 
 ## Virtual Memory
 
+```  sh
+page table 0x0000000087fa7000
+..0: pte 0x0000000021fe8c01 pa 0x0000000087fa3000
+.. ..0: pte 0x0000000021fe8801 pa 0x0000000087fa2000
+.. .. ..0: pte 0x0000000021fe901f pa 0x0000000087fa4000
+.. .. ..1: pte 0x0000000021fe840f pa 0x0000000087fa1000
+.. .. ..2: pte 0x0000000021fe801f pa 0x0000000087fa0000
+..255: pte 0x0000000021fe9801 pa 0x0000000087fa6000
+.. ..511: pte 0x0000000021fe9401 pa 0x0000000087fa5000
+.. .. ..510: pte 0x0000000021fed807 pa 0x0000000087fb6000
+.. .. ..511: pte 0x0000000020001c0b pa 0x0000000080007000
+```
 
-  kernel address space
+kernel address space
 
   ![image-20201008113457084](https://i.loli.net/2020/10/08/zaOiBr4vp5Swdtg.png)
 
@@ -98,10 +110,12 @@ three pieces
 
   Figure 8.13 in CSAPP is Linux process address space.
 
+  User space from 4G / 2^22 to 256T / 2^48.
+
   ![image-20200929234455504](https://i.loli.net/2020/09/29/zUkqTQoWCj1D8hI.png)
 
   **In xv6, every process has a user page table and all process share a single kernel page table which has a lot of independent kernel stack for every process.**
-
+  
   > lab pgtbl has an assignments which we are required to create a kernel page table per process.
 
 ## Ref
