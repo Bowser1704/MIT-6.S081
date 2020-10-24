@@ -1,0 +1,25 @@
+Handle negative sbrk() arguments.
+  ok
+  if (n < 0)
+    growproc();
+
+Kill a process if it page-faults on a virtual memory address higher than any allocated with sbrk().
+  ok
+  if (va >= p->sz) p->killed = -1;
+
+Handle the parent-to-child memory copy in fork() correctly.
+  ok
+  by continue rather than panic
+
+Handle the case in which a process passes a valid address from sbrk() to a system call such as read or write, but the memory for that address has not yet been allocated.
+  ok
+  in the trap.c, add judgement of the type of system call.
+
+Handle out-of-memory correctly: if kalloc() fails in the page fault handler, kill the current process.
+  ok
+  mem = kalloc();
+  if(mem == 0) return -1;
+
+Handle faults on the invalid page below the user stack.
+  ok
+  if (va <= PGROUNDDOWN(p->trapframe->sp)) p->killed = 1;
