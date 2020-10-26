@@ -137,10 +137,16 @@ walkaddr(pagetable_t pagetable, uint64 va)
   pte = walk(pagetable, va, 0);
   if(pte == 0)
     return 0;
-  if((*pte & PTE_V) == 0)
+  if((*pte & PTE_V) == 0){
+    if (lazyalloc(pagetable, va) == 0)
+      pte = walk(pagetable, va, 0);
+    else
+      return 0;
+  }
+  if((*pte & PTE_U) == 0){
+    printf("PTE_U\n");
     return 0;
-  if((*pte & PTE_U) == 0)
-    return 0;
+  }
   pa = PTE2PA(*pte);
   return pa;
 }
@@ -483,6 +489,10 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 int
 lazyalloc(pagetable_t pagetable, uint64 va)
 {
+  struct proc *p = myproc();
+  if (va >= p->sz) return -1;
+  if (va <= PGROUNDDOWN(p->trapframe->sp)) return -1;
+  
   va = PGROUNDDOWN(va); // get the page boundary.
   if(va >= MAXVA) {
     printf("va:%p is bigger than MAXVA\n", va);
