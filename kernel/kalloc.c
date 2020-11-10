@@ -23,9 +23,58 @@ struct {
   struct run *freelist;
 } kmem;
 
+// we will not use memory before pa_start;
+#define MAXPGNUM PHYSTOP/PGSIZE
+
+// maybe can use mutiple lock.
+struct {
+  struct spinlock lock;
+  uint64   count[MAXPGNUM];
+} pgcnt;
+
+void
+cntinit()
+{
+  initlock(&pgcnt.lock, "pagecount");
+  acquire(&pgcnt.lock);
+  for(int i=0; i<MAXPGNUM; i++) {
+    // freerange will decrease its count first.
+    pgcnt.count[i] = 1;
+  }
+  release(&pgcnt.lock); 
+}
+
+#define PG2INDEX(pa) ((pa) >> 12)
+
+void
+up_cnt(uint64 pa)
+{
+  acquire(&pgcnt.lock);
+  pgcnt.count[PG2INDEX(pa)]++;
+  release(&pgcnt.lock);
+}
+
+void
+down_cnt(uint64 pa)
+{
+  acquire(&pgcnt.lock);
+  pgcnt.count[PG2INDEX(pa)]--;
+  release(&pgcnt.lock);
+}
+
+uint64
+get_cnt(uint64 pa)
+{
+  acquire(&pgcnt.lock);
+  uint64 cnt = pgcnt.count[PG2INDEX(pa)];
+  release(&pgcnt.lock);
+  return cnt;
+}
+
 void
 kinit()
 {
+  cntinit();
   initlock(&kmem.lock, "kmem");
   freerange(end, (void*)PHYSTOP);
 }
@@ -47,9 +96,13 @@ void
 kfree(void *pa)
 {
   struct run *r;
-
-  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP) {
+    printf("PA: %p\n", pa);
     panic("kfree");
+  }
+  
+  down_cnt((uint64)pa);
+  if(get_cnt((uint64)pa) > 0) return;
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -76,7 +129,9 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
+  if(r){
     memset((char*)r, 5, PGSIZE); // fill with junk
+    up_cnt((uint64)r);           // kalloc and set cnt to 1;
+  }
   return (void*)r;
 }

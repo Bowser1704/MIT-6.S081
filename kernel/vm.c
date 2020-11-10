@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -14,6 +16,39 @@ pagetable_t kernel_pagetable;
 extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
+
+#define PAGETABLE_READ 512
+void
+vmprint(pagetable_t pd_l2)
+{
+  printf("page table %p\n", pd_l2);
+  int i, j, k;
+  for(i = 0; i < PAGETABLE_READ; i++) {
+    pagetable_t pd_l1 = (pagetable_t)PTE2PA(pd_l2[i]);
+    // PTE is valid or not
+    if (pd_l1 && PTE_V) {
+      printf("..");
+      printf("%d: pte %p pa %p\n", i, pd_l2[i], pd_l1);
+      for(j = 0; j < PAGETABLE_READ; j++) {
+        pagetable_t pd_l0 = (pagetable_t)PTE2PA(pd_l1[j]);
+        // PTE is valid or not
+        if (pd_l0 && PTE_V) {
+          printf(".. ..");  
+          printf("%d: pte %p pa %p\n", j, pd_l1[j], pd_l0);
+          for(k = 0; k < PAGETABLE_READ; k++) {
+            pagetable_t pte = (pagetable_t)PTE2PA(pd_l0[k]);
+            // PTE is valid or not
+            if (pte && PTE_V) {
+              printf(".. .. ..");  
+              printf("%d: pte %p pa %p\n", k, pd_l0[k], pte);
+            }
+          }
+        } 
+      }
+    }
+  } 
+}
+
 
 /*
  * create a direct-map page table for the kernel.
@@ -311,27 +346,28 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
-
+  // char *mem;
+  // vmprint(old);
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
-    flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    flags = (PTE_FLAGS(*pte) & ~PTE_W) | PTE_COW;
+    // PA2PTE() set pte last 10 bit empty.
+    *pte = PA2PTE(pa)| flags;
+    up_cnt(pa);
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
+      //kfree(mem);
       goto err;
     }
   }
+  // vmprint(new);
   return 0;
 
  err:
-  uvmunmap(new, 0, i / PGSIZE, 1);
+  uvmunmap(new, 0, i / PGSIZE, 0);
   return -1;
 }
 
@@ -358,6 +394,8 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
+    if(cow(pagetable, va0) != 0)
+      return -1;
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
@@ -439,4 +477,55 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+int cow(pagetable_t pagetable, uint64 va) {
+  if(va >= MAXVA) {
+    printf("va:%p is bigger than MAXVA\n", va);
+    return -1;
+  }
+  pte_t *oldpte;
+  uint flags;
+  va = PGROUNDDOWN(va); // get the page boundary.
+  
+  // get pte;
+  if((oldpte = walk(pagetable, va, 0)) == 0){
+    return -1;
+    // panic("cow: pte should exist");
+  }
+  uint64 pa;
+  
+  // check old pa is 0 or not;
+  pa = PTE2PA(*oldpte);
+  if(pa == 0) return -1;  //for usertests sbrkfail.
+
+  flags = PTE_FLAGS(*oldpte);
+  
+  if(flags & PTE_COW) {
+    char *mem;
+    mem = kalloc();
+    if(mem == 0){
+      printf("can't kalloc mem\n");
+      // vmprint(myproc()->pagetable);
+      return -1;
+    }
+    memmove(mem, (char*)pa, PGSIZE);
+    kfree((void*)pa);
+    // printf("after kalloc mem: %p\n", mem);
+    
+    // place a page back on the free list if its reference count is zero.
+    // uvmunmap(pagetable, va, 1, 1);
+    // unmap is ok!
+    flags = (flags & ~PTE_COW) | PTE_W;
+    *oldpte = PA2PTE((uint64)mem) | flags; 
+    
+    // new page without PTE_COW
+    //if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags|PTE_W) != 0)
+    //  kfree(mem);
+    //printf("after unmap\n");
+    //vmprint(p->pagetable); 
+  }
+  //printf("after cow\n");
+  //vmprint(p->pagetable);
+  return 0;
 }
