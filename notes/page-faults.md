@@ -99,6 +99,25 @@ Memory mapped files
 
 6. Handle faults on the invalid page below the user stack.
 
+### COW
+
+1. usertests stacktest
+
+	```c
+   if (va <= PGROUNDDOWN(p->trapframe->sp) && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE)
+    	p->killed = 1;
+	```
+
+2. usertests sbrkfail
+
+   ```c
+   // check phsical address.
+   if(pa == 0) return -1;  //for usertests sbrkfail.
+   ```
+
+
+3. usertests bigdir timeout.
+
 ## Word
 
 Sophisticated
