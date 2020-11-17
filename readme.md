@@ -24,4 +24,6 @@
 
 - [x] [Copy on Write](https://github.com/Bowser1704/MIT-6.S081/tree/cow).
 
+- [x] [Multithreading](https://github.com/Bowser1704/MIT-6.S081/tree/thread).
+
 The code of labs is in the correspoding branch.

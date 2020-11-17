@@ -118,12 +118,6 @@ Memory mapped files
 
 3. usertests bigdir timeout.
 
-## Word
-
-Sophisticated
-
-Presumably 
-
 
 
 ## Reference
