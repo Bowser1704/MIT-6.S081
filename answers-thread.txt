@@ -1,0 +1,15 @@
+if thread A and thread B find these entry.
+  put thread A find the entry where its key should be.
+  then put thread B also find the same entry
+  A does this: e->value = value;
+  B does also: e->value = value;
+  so thread A's key lost.
+
+if thread A and B want to insert a entry
+  A does:
+    e->next = n;
+  B does:
+    e->next = n;
+  and the n is same.
+  so thread A's key lost.
+
