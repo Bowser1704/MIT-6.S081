@@ -26,45 +26,35 @@
 #define NBUCKET 13
 
 struct {
-  struct spinlock lock;
-  struct buf head;
-} bucket;
-
-struct {
   struct buf buf[NBUF];
 
   // Linked list of all buffers, through prev/next.
   // Sorted by how recently the buffer was used.
   // head.next is most recent, head.prev is least.
-  // struct buf head;
-  struct bucket table[NBUCKET];
+  struct buf head[NBUCKET];
+  struct spinlock lock[NBUCKET];
 } bcache;
-
 
 void
 binit(void)
 {
   struct buf *b;
-  struct bucket *bkt;
   
   for(int i=0; i<NBUCKET; i++) {
-    bkt = &bcache.table[i];
-    initlock(&bkt->lock, "buf hash table");
+    initlock(&bcache.lock[i], "buf hash table");
   }
 
   // Create linked list of buffers
   for(int i=0; i<NBUCKET; i++){
-    bkt = &bcache.table[i];
-    bkt->head.prev = bkt->head;
-    bkt->head.next = bkt->head;
+    bcache.head[i].prev = &bcache.head[i];
+    bcache.head[i].next = &bcache.head[i];
   }
   for(b = bcache.buf; b < bcache.buf+NBUF; b++){
-    bkt = &bcache.table[0];
-    b->next = bkt->head.next;
-    b->prev = &bkt->head;
+    b->next = bcache.head[0].next;
+    b->prev = &bcache.head[0];
     initsleeplock(&b->lock, "buffer");
-    bkt->head.next->prev = b;
-    bkt->head.next = b;
+    b->next->prev = b;
+    b->prev->next = b;
   }
 }
 
@@ -75,16 +65,14 @@ static struct buf*
 bget(uint dev, uint blockno)
 {
   struct buf *b;
-  struct bucket* bkt;
 
-  int key = blockno % NBUCKET;
-  bkt = &bcache.table[key];
-  acquire(&bkt->lock);
+  uint key = blockno % NBUCKET;
+  acquire(&bcache.lock[key]);
   // Is the block already cached?
-  for(b = bkt->head.next; b != &bkt->head; b = b->next){
+  for(b = bcache.head[key].next; b != &bcache.head[key]; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       b->refcnt++;
-      release(&bkt->lock);
+      release(&bcache.lock[key]);
       acquiresleep(&b->lock);
       return b;
     }
@@ -92,12 +80,12 @@ bget(uint dev, uint blockno)
 
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
-  int new_key = key;
+  uint new_key = key;
   while (1) {
     new_key = (new_key + 1) % NBUCKET;
     if (new_key == key) continue;
-    
-    for(b = bcache.table[new_key].head.prev; b != &bcache.table[new_key].head; b = b->prev){
+    acquire(&bcache.lock[new_key]);
+    for(b = bcache.head[new_key].prev; b != &bcache.head[new_key]; b = b->prev){
       if(b->refcnt == 0) {
         b->dev = dev;
         b->blockno = blockno;
@@ -106,19 +94,20 @@ bget(uint dev, uint blockno)
         // delete b from table[new_key]
         b->prev->next = b->next;
         b->next->prev = b->prev;
-        release(&bcache.table[new_key].lock);
+        release(&bcache.lock[new_key]);
 
         // insert b into table[key]
-        b->prev = &bkt->head;
-        b->next = bkt->head.next;
+        b->prev = &bcache.head[key];
+        b->next = bcache.head[key].next;
         b->next->prev = b;
         b->prev->next = b;
 
-        release(&bkt->lock);
+        release(&bcache.lock[key]);
         acquiresleep(&b->lock);
         return b;
       }
     }
+    release(&bcache.lock[new_key]);
   }
   panic("bget: no buffers");
 }
@@ -156,38 +145,35 @@ brelse(struct buf *b)
 
   releasesleep(&b->lock);
 
-  struct bucket* bkt;
-  bkt = &bcache.table[b->blockno % NBUCKET];
-  acquire(&bkt->lock);
+  uint key = b->blockno % NBUCKET;
+  acquire(&bcache.lock[key]);
   b->refcnt--;
   if (b->refcnt == 0) {
     // no one is waiting for it.
     b->next->prev = b->prev;
     b->prev->next = b->next;
-    b->next = bkt->head.next;
-    b->prev = &bkt->head;
-    bkt->head.next->prev = b;
-    bkt->head.next = b;
+    b->next = bcache.head[key].next;
+    b->prev = &bcache.head[key];
+    b->next->prev = b;
+    b->prev->next = b;
   }
-  release(&bkt->lock);
+  release(&bcache.lock[key]);
 }
 
 void
 bpin(struct buf *b) {
-  struct bucket* bkt;
-  bkt = &bcache.table[b->blockno % NBUCKET];
-  acquire(&bkt->lock);
+  uint key = b->blockno % NBUCKET;
+  acquire(&bcache.lock[key]);
   b->refcnt++;
-  release(&bkt->lock);
+  release(&bcache.lock[key]);
 }
 
 void
 bunpin(struct buf *b) {
-  struct bucket* bkt;
-  bkt = &bcache.table[b->blockno % NBUCKET];
-  acquire(&(bkt->lock));
+  uint key = b->blockno % NBUCKET;
+  acquire(&bcache.lock[key]);
   b->refcnt--;
-  release(&bkt->lock);
+  release(&bcache.lock[key]);
 }
 
 
