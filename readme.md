@@ -26,4 +26,6 @@
 
 - [x] [Multithreading](https://github.com/Bowser1704/MIT-6.S081/tree/thread).
 
+- [x] [Locks](https://github.com/Bowser1704/MIT-6.S081/tree/lock).
+
 The code of labs is in the correspoding branch.
