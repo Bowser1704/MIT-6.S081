@@ -33,7 +33,7 @@ kernel address space
 
   process address space
 
-  ![image-20201008120126463](https://i.loli.net/2020/10/08/f5YiIloKm7DjLC3.png)
+  ![image-20201123113005790](https://i.loli.net/2020/11/23/tjsOy7ThMqmeu1f.png)
 
 - Memory protection
 
@@ -110,13 +110,19 @@ three pieces
 
   Figure 8.13 in CSAPP is Linux process address space.
 
-  User space from 4G / 2^22 to 256T / 2^48.
+  User space from 4GB (2^22^) to 256TB (2^48^).
 
   ![image-20200929234455504](https://i.loli.net/2020/09/29/zUkqTQoWCj1D8hI.png)
 
   **In xv6, every process has a user page table and all process share a single kernel page table which has a lot of independent kernel stack for every process.**
   
   > lab pgtbl has an assignments which we are required to create a kernel page table per process.
+
+- Stack, array direction.
+
+  So overall, we've seen that strings, arrays, and integers all "grow up", starting at an address and continuing to higher and higher addresses.
+
+  https://www.cs.uaf.edu/2007/fall/cs301/lecture/10_03_arrays.html
 
 ## Ref
 

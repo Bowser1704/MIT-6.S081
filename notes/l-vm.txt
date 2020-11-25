@@ -133,7 +133,7 @@
   why do standard kernels do so?
     some reasons are lame, some are better, none are fundamental
     - the hardware makes it difficult to turn it off
-	  e.g. on entering a system call, one would have to disable VM
+	    e.g. on entering a system call, one would have to disable VM
     - the kernel itself can benefit from virtual addresses
       mark text pages X, but data not (helps tracking down bugs)
       unmap a page below kernel stack (helps tracking down bugs)
@@ -189,7 +189,6 @@
   Q: Is trampoline mapped twice? (yes, last entry and direct-mapped, entry [2, 3, 7])
   kvminithart();
   Q: after executing w_satp() why will the next instruction be sfence_vma()?
-	
 * mappages() in vm.c
   arguments are top PD, va, size, pa, perm
   adds mappings from a range of va's to corresponding pa's
@@ -199,7 +198,6 @@
       need the PTE's address (not just content) b/c we want to modify
     put the desired pa into the PTE
     mark PTE as valid w/ PTE_P
-
 * walk() in vm.c
   mimics how the paging h/w finds the PTE for an address
   PX extracts the 9 bits at Level level
@@ -211,10 +209,8 @@
     alloc a page-table page
     fill in pte with PPN (using PA2PTE)
   now the PTE we want is in the page-table page
-
 * procinit() in proc.c
   alloc a page for each kernel stack with a guard page
-
 * setup user address space
   allocproc(): allocates empty top-level page table
   fork(): uvmcopy()
@@ -223,7 +219,6 @@
     loadseg
   print user page table for sh
   Q: what is entry 2? 
-
 * a process calls sbrk(n) to ask for n more bytes of heap memory
   user/umalloc.c calls sbrk() to get memory for the allocator
   each process has a size
@@ -231,12 +226,11 @@
   sbrk() allocates physical memory (RAM)
   maps it into the process's page table
   returns the starting address of the new memory
-
 * growproc() in proc.c
   proc->sz is the process's current size
   uvmalloc() does most of the work
   when switching to user space satp will be loaded with updated page table
-
 * uvmalloc() in vm.c
   why PGROUNDUP?
   arguments to mappages()...
+

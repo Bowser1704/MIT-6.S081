@@ -43,3 +43,7 @@ micro/monolithic kernel
 ![image-20200917203211696](https://tva1.sinaimg.cn/large/007S8ZIlgy1gitxawbbn2j30ty0nogn2.jpg)
 
 > At the top of the address space xv6 reserves a page for a **trampoline** and a page mapping the process’s **trapframe** to switch to the kernel, as we will explain in Chapter 4.
+
+----
+
+how the fork function return twice;
