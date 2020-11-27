@@ -314,8 +314,35 @@ sys_open(void)
       end_op();
       return -1;
     }
+    if(ip->type == T_SYMLINK) {
+      if(omode & O_NOFOLLOW){
+      }else {
+        char real_path[MAXPATH];
+        int depth = 10;
+        while (ip->type == T_SYMLINK && depth-- > 0){
+          if(readi(ip, 0, (uint64)real_path, 0, MAXPATH) != MAXPATH) {
+            iunlockput(ip);
+            end_op();
+            printf("symlink open readi error\n");
+            return -1;
+          }
+          iunlockput(ip);
+          if(strncmp(path, real_path, MAXPATH) == 0){
+            //printf("symlink open cycle\n");
+            end_op();
+            return -1;
+          }
+          if((ip = namei(real_path)) == 0){
+            //printf("symlink open real file error\n%s\n", real_path);
+            end_op();
+            return -1;
+          }
+          ilock(ip);
+        }
+      }
+    }
   }
-
+  
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
     iunlockput(ip);
     end_op();
@@ -483,4 +510,35 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+uint64
+sys_symlink(void)
+{
+  char new[MAXPATH], old[MAXPATH];
+  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+    return -1;
+  
+  // printf("%s\n", new);
+  // printf("%s\n", old);
+  begin_op();
+  // get a new inode;
+  struct inode *ip;
+  if((ip = create(new, T_SYMLINK, 0, 0)) == 0){
+    goto bad;
+  }
+  // write the old path to the new inode;
+  // ilock(ip);
+  if(writei(ip, 0, (uint64)old, 0, MAXPATH) != MAXPATH){
+    iunlockput(ip);
+    goto bad;
+  }
+  //printf("old path : %s\n", old);
+  iunlockput(ip);
+  end_op();
+  return 0;
+
+bad:
+  end_op();
+  return -1;
 }
