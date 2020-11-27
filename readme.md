@@ -1,27 +1,27 @@
-# MIT-6.S081
+# xv6-labs-2020
 
 ## Labs
 
-- [x] [Unix utilities](https://github.com/Bowser1704/MIT-6.S081/blob/master/labs/unix-utilities).
+- [x] [Unix utilities](https://github.com/Bowser1704/xv6-labs-2020/tree/util).
 
-- [x] [System call](https://github.com/Bowser1704/MIT-6.S081/blob/master/labs/system-call).
+- [x] [System call](https://github.com/Bowser1704/xv6-labs-2020/tree/syscall).
 
-- [x] [Page table](https://github.com/Bowser1704/MIT-6.S081/tree/pgtbl).
+- [x] [Page table](https://github.com/Bowser1704/xv6-labs-2020/tree/pgtbl).
 
-- [x] [Traps](https://github.com/Bowser1704/MIT-6.S081/tree/traps).
+- [x] [Traps](https://github.com/Bowser1704/xv6-labs-2020/tree/traps).
 
-- [x] [Lazy allocation](https://github.com/Bowser1704/MIT-6.S081/tree/lazy).
+- [x] [Lazy allocation](https://github.com/Bowser1704/xv6-labs-2020/tree/lazy).
 
-- [x] [Copy on Write](https://github.com/Bowser1704/MIT-6.S081/tree/cow).
+- [x] [Copy on Write](https://github.com/Bowser1704/xv6-labs-2020/tree/cow).
 
-- [x] [Multithreading](https://github.com/Bowser1704/MIT-6.S081/tree/thread).
+- [x] [Multithreading](https://github.com/Bowser1704/xv6-labs-2020/tree/thread).
 
-- [x] [Locks](https://github.com/Bowser1704/MIT-6.S081/tree/lock).
+- [x] [Locks](https://github.com/Bowser1704/xv6-labs-2020/tree/lock).
 
-- [x] [File system](https://github.com/Bowser1704/MIT-6.S081/tree/fs).
+- [x] [File system](https://github.com/Bowser1704/xv6-labs-2020/tree/fs).
 
-- [ ] [mmap](https://github.com/Bowser1704/MIT-6.S081/tree/mmap).
+- [ ] [mmap](https://github.com/Bowser1704/xv6-labs-2020/tree/mmap).
 
-- [ ] [network driver](https://github.com/Bowser1704/MIT-6.S081/tree/net).
+- [ ] [network driver](https://github.com/Bowser1704/xv6-labs-2020/tree/net).
 
 The code of labs is in the correspoding branch.
